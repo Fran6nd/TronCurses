@@ -6,7 +6,7 @@
 #include <time.h>
 
 #define COL_RED 1
-#define COL_GREEN 2
+#define COL_BLUE 2
 #define COL_GREY 3
 #define COL_BLACK 4
 #define COL_RED_BLACK 5
@@ -35,12 +35,7 @@ struct player
     struct position position;
 };
 struct player RED;
-struct player GREEN;
-struct neighbor
-{
-    int n;
-    struct position paths[8];
-};
+struct player BLUE;
 struct position pos = {4, 3};
 struct position end_point;
 
@@ -50,40 +45,14 @@ char get_tile(int _x, int _y)
     return map[_y * COLS + _x];
 }
 
-int is_odd(int n)
-{
-    if (n % 2 == 0)
-    {
-        return 1;
-    }
-    return 0;
-}
-
-int can_move_v(struct position *p)
-{
-    if (is_odd(p->x))
-    {
-        return 1;
-    }
-    return 0;
-}
-int can_move_h(struct position *p)
-{
-    if (is_odd(p->y))
-    {
-        return 0;
-    }
-    return 1;
-}
-
 void draw_green_at(struct position p)
 {
     move(p.y, p.x);
     if (has_colors)
     {
-        attron(COLOR_PAIR(COL_GREEN));
+        attron(COLOR_PAIR(COL_BLUE));
         printw(" ");
-        attroff(COLOR_PAIR(COL_GREEN));
+        attroff(COLOR_PAIR(COL_BLUE));
     }
     else
     {
@@ -102,6 +71,22 @@ void draw_red_at(struct position p)
     else
     {
         addch('O');
+    }
+}
+
+void fill_screen(int color)
+{
+    int _x;
+    int _y;
+    for (_y = 1; _y < LINES-1; _y++)
+    {
+        for (_x = 1; _x < COLS-1; _x++)
+        {
+            move(_y, _x);
+            attron(COLOR_PAIR(color));
+            printw(" ");
+            attroff(COLOR_PAIR(color));
+        }
     }
 }
 
@@ -172,7 +157,7 @@ void draw_map()
     attroff(COLOR_PAIR(COL_RED_BLACK));
     {
         draw_red_at(RED.position);
-        draw_green_at(GREEN.position);
+        draw_green_at(BLUE.position);
     }
     move(0, 5);
     if (has_colors)
@@ -211,41 +196,7 @@ void set_tile(int _x, int _y, char _c)
     struct position p = {_x, _y};
     map[_y * COLS + _x] = _c;
 }
-struct neighbor get_neighboors(struct position p)
-{
-    struct position up, down, right, left;
-    up.x = p.x;
-    up.y = p.y - 1;
-    down.x = p.x;
-    down.y = p.y + 1;
-    right.y = p.y;
-    right.x = p.x + 1;
-    left.y = p.y;
-    left.x = p.x - 1;
-    struct neighbor nb;
-    nb.n = 0;
-    if (is_on_map(up))
-    {
-        nb.paths[nb.n] = up;
-        nb.n++;
-    }
-    if (is_on_map(down))
-    {
-        nb.paths[nb.n] = down;
-        nb.n++;
-    }
-    if (is_on_map(right))
-    {
-        nb.paths[nb.n] = right;
-        nb.n++;
-    }
-    if (is_on_map(left))
-    {
-        nb.paths[nb.n] = left;
-        nb.n++;
-    }
-    return nb;
-}
+
 int can_go(struct position p)
 {
     if (is_on_map(p))
@@ -260,19 +211,15 @@ int update_player(struct player *p)
     switch (p->direction)
     {
     case DIR_DOWN:
-        /* code */
         next_pos.y++;
         break;
     case DIR_UP:
-        /* code */
         next_pos.y--;
         break;
     case DIR_RIGHT:
-        /* code */
         next_pos.x++;
         break;
     case DIR_LEFT:
-        /* code */
         next_pos.x--;
         break;
     default:
@@ -303,29 +250,13 @@ int main(int argc, char *argv[])
             printf("./TronCurses -h to display help.\n");
             return 0;
         }
-        else if (strcmp(argv[1], "--nodelay") == 0)
-        {
-            //GENERATE_DELAY = 0;
-        }
         else
         {
             printf("Unknown arg \"%s\" see -h for help.\n", argv[1]);
             return 0;
         }
     }
-    else if (argc == 3)
-    {
-        if (strcmp(argv[1], "--delay") == 0)
-        {
-            //GENERATE_DELAY = atoi(argv[2]);
-        }
-        else
-        {
-            printf("Unknown arg \"%s\" see -h for help.\n", argv[1]);
-            return 0;
-        }
-    }
-    else if (argc > 3)
+    else if (argc > 2)
     {
         printf("Too many args... see -h for help.\n");
         return 0;
@@ -337,7 +268,7 @@ int main(int argc, char *argv[])
     {
         start_color();
         init_pair(COL_RED, COLOR_RED, COLOR_RED);
-        init_pair(COL_GREEN, COLOR_GREEN, COLOR_GREEN);
+        init_pair(COL_BLUE, COLOR_BLUE, COLOR_BLUE);
         init_pair(COL_GREY, COLOR_BLACK, COLOR_WHITE);
         init_pair(COL_BLACK, COLOR_BLACK, COLOR_BLACK);
         init_pair(COL_RED_BLACK, COLOR_RED, COLOR_BLACK);
@@ -373,27 +304,29 @@ begin:
     {
         set_tile(x, y, '+');
     }
-    RED.direction = DIR_RIGHT;
-    RED.position.x = 1;
-    RED.position.y = 1;
-    GREEN.direction = DIR_LEFT;
-    GREEN.position.x = COLS - 2;
-    GREEN.position.y = LINES - 2;
-    timeout(100);
+    BLUE.direction = DIR_RIGHT;
+    BLUE.position.x = 1;
+    BLUE.position.y = 1;
+    RED.direction = DIR_LEFT;
+    RED.position.x = COLS - 2;
+    RED.position.y = LINES - 2;
+    timeout(60);
     while (RUNNING)
     {
         set_tile(RED.position.x, RED.position.y, 'R');
-        set_tile(GREEN.position.x, GREEN.position.y, 'G');
+        set_tile(BLUE.position.x, BLUE.position.y, 'G');
         int ok = update_player(&RED);
         if (!ok)
         {
+            fill_screen(COL_BLUE);
             while (getch() == ERR)
                 ;
             goto begin;
         }
-        ok = update_player(&GREEN);
+        ok = update_player(&BLUE);
         if (!ok)
         {
+            fill_screen(COL_RED);
             while (getch() == ERR)
                 ;
             goto begin;
@@ -423,23 +356,23 @@ begin:
         }
         else if (c == 'q')
         {
-                goto quit;
+            goto quit;
         }
         else if (c == 'e')
         {
-            GREEN.direction = DIR_UP;
+            BLUE.direction = DIR_UP;
         }
         else if (c == 'd')
         {
-            GREEN.direction = DIR_DOWN;
+            BLUE.direction = DIR_DOWN;
         }
         else if (c == 's')
         {
-            GREEN.direction = DIR_LEFT;
+            BLUE.direction = DIR_LEFT;
         }
         else if (c == 'f')
         {
-            GREEN.direction = DIR_RIGHT;
+            BLUE.direction = DIR_RIGHT;
         }
         if (get_tile(pos.x, pos.y) != ' ')
         {
